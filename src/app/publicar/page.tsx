@@ -5,15 +5,7 @@ import { useState, useEffect } from 'react';
 import { CITIES } from '@/lib/mockData';
 import { addUserTrip } from '@/lib/client/userTrips';
 import { getUsuario } from '@/lib/client/auth';
-
-const UNIVERSIDADES = [
-  'UDP — U. Diego Portales',
-  'PUC — Pontificia U. Católica',
-  'U. de Chile',
-  'USACH — U. de Santiago',
-  'UAI — U. Adolfo Ibáñez',
-  'U. de Valparaíso',
-];
+import { NOMBRES_UNIVERSIDADES as UNIVERSIDADES } from '@/lib/universidades';
 
 const GENEROS = ['🎵 Pop', '🎸 Rock', '🔥 Reggaeton', '🎷 Jazz', '🎧 Electrónica', '🌊 Indie', '🎤 Hip-Hop', '🎻 Clásica'];
 
