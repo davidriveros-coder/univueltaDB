@@ -1628,6 +1628,54 @@ a {
   color: var(--txt);
 }
 
+/* LOADING */
+#s-loading {
+  background: var(--bg);
+  align-items: stretch;
+}
+.loading-wrap {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+}
+.loading-road {
+  position: relative;
+  width: 220px;
+  height: 36px;
+  overflow: hidden;
+}
+.loading-road::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 4px;
+  height: 2px;
+  background-image: repeating-linear-gradient(to right, var(--border) 0 12px, transparent 12px 24px);
+}
+.loading-car {
+  position: absolute;
+  bottom: 2px;
+  font-size: 28px;
+  animation: drive-across 1.7s linear infinite;
+}
+@keyframes drive-across {
+  from {
+    left: -15%;
+  }
+  to {
+    left: 105%;
+  }
+}
+.loading-txt {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--txt2);
+}
+
 @media (max-width: 430px) {
   body {
     padding: 0;

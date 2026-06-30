@@ -6,6 +6,7 @@ import { Avatar } from '@/components/Avatar';
 import { Badge } from '@/components/Badge';
 import { GenreChips } from '@/components/GenreChips';
 import { SociabilityBar } from '@/components/SociabilityBar';
+import { LoadingScreen } from '@/components/LoadingScreen';
 import { getTripById, formatCLP } from '@/lib/services/trips';
 import type { Trip } from '@/lib/types';
 import { getUserTrips } from '@/lib/client/userTrips';
@@ -17,15 +18,23 @@ export default function DetallePage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
   const [trip, setTrip] = useState<Trip | undefined>(undefined);
+  const [cargando, setCargando] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [nombre, setNombre] = useState('');
   const [contacto, setContacto] = useState('');
 
   useEffect(() => {
     const userTrip = getUserTrips().find((t) => t.id === params.id);
-    if (userTrip) { setTrip(userTrip); return; }
-    getTripById(params.id).then((found) => { if (found) setTrip(found); });
+    if (userTrip) { setTrip(userTrip); setCargando(false); return; }
+    getTripById(params.id).then((found) => {
+      if (found) setTrip(found);
+      setCargando(false);
+    });
   }, [params.id]);
+
+  if (cargando) {
+    return <LoadingScreen text="Buscando viaje…" />;
+  }
 
   if (!trip) {
     return (

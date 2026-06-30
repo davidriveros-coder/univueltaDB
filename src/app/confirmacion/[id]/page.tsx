@@ -6,18 +6,24 @@ import { Badge } from '@/components/Badge';
 import { getTripById, formatCLP } from '@/lib/services/trips';
 import type { Trip } from '@/lib/types';
 import { getUserTrips } from '@/lib/client/userTrips';
+import { LoadingScreen } from '@/components/LoadingScreen';
 
 export default function ConfirmacionPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
   const [trip, setTrip] = useState<Trip | undefined>(undefined);
+  const [cargando, setCargando] = useState(true);
 
   useEffect(() => {
     const userTrip = getUserTrips().find((t) => t.id === params.id);
-    if (userTrip) { setTrip(userTrip); return; }
-    getTripById(params.id).then((found) => { if (found) setTrip(found); });
+    if (userTrip) { setTrip(userTrip); setCargando(false); return; }
+    getTripById(params.id).then((found) => {
+      if (found) setTrip(found);
+      setCargando(false);
+    });
   }, [params.id]);
 
+  if (cargando) return <LoadingScreen text="Confirmando solicitud…" />;
   if (!trip) return null;
 
   return (
