@@ -29,6 +29,7 @@ export default function PerfilPage() {
   const [fotoPerfil, setFotoPerfil] = useState('');
   const [errorEmail, setErrorEmail] = useState('');
   const [enviandoVerificacion, setEnviandoVerificacion] = useState(false);
+  const [actualizandoEstado, setActualizandoEstado] = useState(false);
 
   useEffect(() => {
     const u = getUsuario();
@@ -107,6 +108,13 @@ export default function PerfilPage() {
       setUsuario(updated);
     }
     setEnviandoVerificacion(false);
+  }
+
+  async function actualizarEstado() {
+    setActualizandoEstado(true);
+    const updated = await refrescarVerificacion();
+    if (updated) setUsuario(updated);
+    setActualizandoEstado(false);
   }
 
   function cerrarSesion() {
@@ -217,9 +225,21 @@ export default function PerfilPage() {
         )}
 
         <div className="sec">
-          <div className="sec-title">
-            Verificación de identidad
-            {estado === 'verificado' ? ' ✅' : estado === 'pendiente' ? ' — en revisión' : ' — pendiente'}
+          <div className="sec-title" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <span>
+              Verificación de identidad
+              {estado === 'verificado' ? ' ✅' : estado === 'pendiente' ? ' — en revisión' : ' — pendiente'}
+            </span>
+            {estado !== 'verificado' && (
+              <button
+                type="button"
+                onClick={actualizarEstado}
+                disabled={actualizandoEstado}
+                style={{ background: 'none', border: 'none', color: 'var(--blue)', fontSize: 11, fontWeight: 700, cursor: 'pointer', textTransform: 'none', letterSpacing: 0 }}
+              >
+                {actualizandoEstado ? 'Actualizando…' : '🔄 Actualizar estado'}
+              </button>
+            )}
           </div>
           {estado !== 'verificado' && (
             <p style={{ fontSize: 13, color: 'var(--txt2)', marginBottom: 12, lineHeight: 1.5 }}>

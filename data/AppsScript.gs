@@ -227,16 +227,33 @@ function verificarUsuario(params) {
   const verifCol = headers.indexOf('verificado');
   const nombreCol = headers.indexOf('nombre');
 
+  if (verifCol === -1) {
+    return HtmlService.createHtmlOutput(
+      '<div style="font-family:sans-serif;text-align:center;padding:40px">'
+      + '<h2>Falta la columna "verificado"</h2>'
+      + '<p>La hoja "usuarios" no tiene una columna con el encabezado exacto <code>verificado</code> (minúscula, sin espacios). '
+      + 'Agrégala y vuelve a hacer clic en el link del correo.</p></div>'
+    );
+  }
+  if (tokenCol === -1) {
+    return HtmlService.createHtmlOutput(
+      '<div style="font-family:sans-serif;text-align:center;padding:40px">'
+      + '<h2>Falta la columna "token_verificacion"</h2>'
+      + '<p>Agrégala a la hoja "usuarios" y pide que te reenvíen la solicitud de verificación.</p></div>'
+    );
+  }
+
   for (let i = 1; i < values.length; i++) {
     if (String(values[i][idCol]) === String(params.id)) {
-      const tokenGuardado = tokenCol !== -1 ? values[i][tokenCol] : '';
+      const tokenGuardado = values[i][tokenCol];
       if (!params.token || String(tokenGuardado) !== String(params.token)) {
         return HtmlService.createHtmlOutput(
           '<div style="font-family:sans-serif;text-align:center;padding:40px">'
           + '<h2>Enlace inválido</h2><p>Este enlace de verificación no es válido o ya fue usado.</p></div>'
         );
       }
-      if (verifCol !== -1) sheet.getRange(i + 1, verifCol + 1).setValue(true);
+      sheet.getRange(i + 1, verifCol + 1).setValue(true);
+      SpreadsheetApp.flush();
       const nombre = nombreCol !== -1 ? values[i][nombreCol] : '';
       return HtmlService.createHtmlOutput(
         '<div style="font-family:sans-serif;text-align:center;padding:40px">'
@@ -245,5 +262,5 @@ function verificarUsuario(params) {
       );
     }
   }
-  return HtmlService.createHtmlOutput('<h2>Usuario no encontrado</h2>');
+  return HtmlService.createHtmlOutput('<h2>Usuario no encontrado</h2><p>id: ' + params.id + '</p>');
 }
