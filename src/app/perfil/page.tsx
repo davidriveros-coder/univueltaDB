@@ -43,7 +43,10 @@ export default function PerfilPage() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ sheet: 'usuarios', action: 'update', id: updated.id, data: usuarioParaSheets(updated) }),
-    }).catch(() => {});
+    })
+      .then((r) => r.json())
+      .then((data) => { if (data?.error) console.error('Sheets update usuario falló:', data.error); })
+      .catch((err) => console.error('Sheets update usuario falló:', err));
   }
 
   function guardar() {

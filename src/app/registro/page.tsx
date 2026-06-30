@@ -81,7 +81,10 @@ export default function RegistroPage() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ sheet: 'usuarios', action: 'create', data: usuarioParaSheets(usuario) }),
-    }).catch(() => {});
+    })
+      .then((r) => r.json())
+      .then((data) => { if (data?.error) console.error('Sheets create usuario falló:', data.error); })
+      .catch((err) => console.error('Sheets create usuario falló:', err));
     router.replace('/');
   }
 
