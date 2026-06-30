@@ -75,5 +75,43 @@ export function addUserTrip(input: PublishTripInput): Trip {
   const current = getUserTrips();
   current.unshift(trip);
   writeJSON(KEY, current);
+
+  fetch('/api/sheets', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      sheet: 'viajes',
+      action: 'create',
+      data: {
+        id: trip.id,
+        conductor_nombre: trip.driver.fullName,
+        conductor_iniciales: trip.driver.initials,
+        conductor_genero: trip.driver.gender,
+        conductor_tipo_verificacion: trip.driver.verificationType,
+        conductor_universidad: trip.driver.university,
+        conductor_carrera: trip.driver.careerOrRole,
+        conductor_rating: trip.driver.rating,
+        conductor_resenas: trip.driver.reviewCount,
+        vehiculo: trip.driver.vehicle,
+        origen: trip.origin,
+        destino: trip.destination,
+        punto_origen: trip.originPoint,
+        punto_destino: trip.destinationPoint,
+        fecha: trip.dateISO,
+        hora: trip.time,
+        precio: trip.priceCLP,
+        cupos_totales: trip.seatsTotal,
+        cupos_disponibles: trip.seatsAvailable,
+        generos_musicales: trip.genres.join('|'),
+        sociabilidad: trip.sociabilityLevel,
+        nota_conductor: trip.driverNote,
+        estado: 'activo',
+      },
+    }),
+  })
+    .then((r) => r.json())
+    .then((data) => { if (data?.error) console.error('Sheets create viaje falló:', data.error); })
+    .catch((err) => console.error('Sheets create viaje falló:', err));
+
   return trip;
 }
