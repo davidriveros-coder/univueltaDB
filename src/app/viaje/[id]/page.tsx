@@ -12,13 +12,14 @@ import type { Trip } from '@/lib/types';
 import { getUserTrips } from '@/lib/client/userTrips';
 import { createBooking } from '@/lib/client/bookings';
 import { getPerfil, savePerfil } from '@/lib/client/profile';
-import { getUsuario } from '@/lib/client/auth';
+import { getUsuario, refrescarVerificacion } from '@/lib/client/auth';
 
 export default function DetallePage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
   const [trip, setTrip] = useState<Trip | undefined>(undefined);
   const [cargando, setCargando] = useState(true);
+  const [verificado, setVerificado] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [nombre, setNombre] = useState('');
   const [contacto, setContacto] = useState('');
@@ -31,6 +32,10 @@ export default function DetallePage() {
       setCargando(false);
     });
   }, [params.id]);
+
+  useEffect(() => {
+    refrescarVerificacion().then((u) => setVerificado(!!u?.verificado));
+  }, []);
 
   if (cargando) {
     return <LoadingScreen text="Buscando viaje…" />;
@@ -52,6 +57,7 @@ export default function DetallePage() {
 
   function solicitarCupo() {
     if (!trip) return;
+    if (!verificado) { router.push('/perfil'); return; }
     const perfil = getPerfil();
     if (perfil) {
       createBooking(trip.id, perfil);
@@ -181,13 +187,18 @@ export default function DetallePage() {
             )}
           </div>
         </div>
+        {!verificado && (
+          <div className="verif-banner">
+            🛡️ Debes verificar tu identidad en tu perfil para solicitar cupos.
+          </div>
+        )}
         <div className="det-bar">
           <div>
             <div className="det-price-big">{formatCLP(trip.priceCLP)}</div>
             <div className="det-price-sub">por persona</div>
           </div>
           <button className="btn btn-p" style={{ width: 'auto', padding: '14px 22px' }} onClick={solicitarCupo}>
-            Solicitar cupo →
+            {verificado ? 'Solicitar cupo →' : 'Verificar identidad →'}
           </button>
         </div>
         <div className="safe" />

@@ -2,7 +2,14 @@
 
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
-import { saveUsuario, usuarioParaSheets, type UserRole, type Usuario } from '@/lib/client/auth';
+import {
+  saveUsuario,
+  usuarioParaSheets,
+  documentosCompletos,
+  solicitarVerificacion,
+  type UserRole,
+  type Usuario,
+} from '@/lib/client/auth';
 import { fileToCompressedDataUrl } from '@/lib/client/imageUtils';
 import { NOMBRES_UNIVERSIDADES, esCorreoInstitucionalValido } from '@/lib/universidades';
 
@@ -58,7 +65,7 @@ export default function RegistroPage() {
     }
   }
 
-  function crearCuenta() {
+  async function crearCuenta() {
     if (!paso1Valido) return;
     const usuario: Usuario = {
       id: `u-${Date.now()}`,
@@ -77,14 +84,25 @@ export default function RegistroPage() {
       creadoEn: new Date().toISOString(),
     };
     saveUsuario(usuario);
-    fetch('/api/sheets', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ sheet: 'usuarios', action: 'create', data: usuarioParaSheets(usuario) }),
-    })
-      .then((r) => r.json())
-      .then((data) => { if (data?.error) console.error('Sheets create usuario falló:', data.error); })
-      .catch((err) => console.error('Sheets create usuario falló:', err));
+    setSubiendo(true);
+    try {
+      const res = await fetch('/api/sheets', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sheet: 'usuarios', action: 'create', data: usuarioParaSheets(usuario) }),
+      });
+      const data = await res.json();
+      if (data?.error) console.error('Sheets create usuario falló:', data.error);
+
+      if (documentosCompletos(usuario.documentos)) {
+        const enviado = await solicitarVerificacion(usuario);
+        if (enviado) saveUsuario({ ...usuario, verificacionEnviada: true });
+      }
+    } catch (err) {
+      console.error('Sheets create usuario falló:', err);
+    } finally {
+      setSubiendo(false);
+    }
     router.replace('/');
   }
 
@@ -110,6 +128,7 @@ export default function RegistroPage() {
         universidad: String(row.universidad ?? ''),
         rol: (row.rol as UserRole) === 'conductor' ? 'conductor' : 'pasajero',
         descripcion: String(row.descripcion ?? ''),
+        verificado: row.verificado === true || String(row.verificado).toLowerCase() === 'true',
         creadoEn: String(row.creadoEn ?? new Date().toISOString()),
       };
       saveUsuario(usuario);

@@ -4,8 +4,9 @@ import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { CITIES } from '@/lib/mockData';
 import { addUserTrip } from '@/lib/client/userTrips';
-import { getUsuario } from '@/lib/client/auth';
+import { getUsuario, refrescarVerificacion } from '@/lib/client/auth';
 import { NOMBRES_UNIVERSIDADES as UNIVERSIDADES } from '@/lib/universidades';
+import { LoadingScreen } from '@/components/LoadingScreen';
 
 const GENEROS = ['🎵 Pop', '🎸 Rock', '🔥 Reggaeton', '🎷 Jazz', '🎧 Electrónica', '🌊 Indie', '🎤 Hip-Hop', '🎻 Clásica'];
 
@@ -29,6 +30,7 @@ export default function PublicarPage() {
   const [precio, setPrecio] = useState(4500);
   const [cupos, setCupos] = useState(3);
   const [nombre, setNombre] = useState('');
+  const [verificado, setVerificado] = useState<boolean | null>(null);
 
   useEffect(() => {
     const u = getUsuario();
@@ -37,6 +39,7 @@ export default function PublicarPage() {
       const match = UNIVERSIDADES.find((un) => un === u.universidad);
       if (match) setUniversidad(match);
     }
+    refrescarVerificacion().then((updated) => setVerificado(!!updated?.verificado));
   }, []);
 
   function toggleGenero(g: string) {
@@ -63,6 +66,43 @@ export default function PublicarPage() {
     router.push(`/viaje/${trip.id}`);
   }
 
+  if (verificado === null) {
+    return <LoadingScreen text="Verificando tu cuenta…" />;
+  }
+
+  if (!verificado) {
+    return (
+      <div className="screen" id="s-publish">
+        <div className="sb" style={{ background: 'var(--card)', padding: '0 20px' }}>
+          <span style={{ color: 'var(--txt)' }}>9:41</span>
+          <div className="sb-ic" style={{ color: 'var(--txt)' }}>
+            <span>●●●</span>
+            <span>🔋</span>
+          </div>
+        </div>
+        <div className="pub-hdr">
+          <button className="back dk" onClick={() => router.push('/')}>←</button>
+          <div>
+            <div style={{ fontSize: 18, fontWeight: 700 }}>Publicar viaje</div>
+            <div style={{ fontSize: 13, color: 'var(--txt2)' }}>Ofrece cupos a la comunidad universitaria</div>
+          </div>
+        </div>
+        <div className="gate-wrap">
+          <div className="gate-ico">🛡️</div>
+          <div className="gate-h">Verifica tu identidad primero</div>
+          <div className="gate-p">
+            Para publicar viajes necesitas tener tu perfil verificado. Sube tu carnet y credencial en tu perfil y
+            espera la aprobación.
+          </div>
+          <button className="btn btn-p" style={{ width: 'auto', padding: '12px 28px' }} onClick={() => router.push('/perfil')}>
+            Ir a mi perfil →
+          </button>
+        </div>
+        <div className="safe" />
+      </div>
+    );
+  }
+
   return (
     <div className="screen" id="s-publish">
       <div className="sb" style={{ background: 'var(--card)', padding: '0 20px' }}>
@@ -82,13 +122,6 @@ export default function PublicarPage() {
         </div>
       </div>
       <div className="pub-body">
-        <div className="warn-box">
-          <span style={{ fontSize: 20 }}>ℹ️</span>
-          <div>
-            <h4>Verificación requerida</h4>
-            <p>Para publicar viajes debes completar tu verificación como conductor en UniVuelta.</p>
-          </div>
-        </div>
         <div>
           <label className="lbl">Tu nombre</label>
           <input className="inp" value={nombre} onChange={(e) => setNombre(e.target.value)} placeholder="Nombre y apellido" />

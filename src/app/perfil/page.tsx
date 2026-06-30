@@ -8,6 +8,9 @@ import {
   clearUsuario,
   usuarioParaSheets,
   documentosCompletos,
+  estadoVerificacion,
+  solicitarVerificacion,
+  refrescarVerificacion,
   type Usuario,
 } from '@/lib/client/auth';
 import { fileToCompressedDataUrl } from '@/lib/client/imageUtils';
@@ -25,6 +28,7 @@ export default function PerfilPage() {
   const [descripcion, setDescripcion] = useState('');
   const [fotoPerfil, setFotoPerfil] = useState('');
   const [errorEmail, setErrorEmail] = useState('');
+  const [enviandoVerificacion, setEnviandoVerificacion] = useState(false);
 
   useEffect(() => {
     const u = getUsuario();
@@ -36,6 +40,8 @@ export default function PerfilPage() {
     setUniversidad(u.universidad);
     setDescripcion(u.descripcion ?? '');
     setFotoPerfil(u.fotoPerfil ?? '');
+
+    refrescarVerificacion().then((updated) => { if (updated) setUsuario(updated); });
   }, [router]);
 
   function sincronizar(updated: Usuario) {
@@ -88,8 +94,19 @@ export default function PerfilPage() {
       documentos: { ...usuario.documentos, [campo]: dataUrl },
     };
     saveUsuario(updated);
-    sincronizar(updated);
     setUsuario(updated);
+  }
+
+  async function enviarAVerificacion() {
+    if (!usuario || !documentosCompletos(usuario.documentos)) return;
+    setEnviandoVerificacion(true);
+    const ok = await solicitarVerificacion(usuario);
+    if (ok) {
+      const updated = { ...usuario, verificacionEnviada: true };
+      saveUsuario(updated);
+      setUsuario(updated);
+    }
+    setEnviandoVerificacion(false);
   }
 
   function cerrarSesion() {
@@ -108,7 +125,8 @@ export default function PerfilPage() {
 
   const rolLabel = usuario.rol === 'conductor' ? 'Conductor' : 'Pasajero';
   const rolIcon = usuario.rol === 'conductor' ? '🚗' : '🎒';
-  const verificado = documentosCompletos(usuario.documentos);
+  const estado = estadoVerificacion(usuario);
+  const docsListos = documentosCompletos(usuario.documentos);
 
   return (
     <div className="screen" id="s-perfil">
@@ -137,7 +155,9 @@ export default function PerfilPage() {
           <div style={{ fontSize: 22, fontWeight: 800, color: '#fff', marginBottom: 4 }}>{usuario.nombre}</div>
           <div style={{ fontSize: 14, color: 'rgba(255,255,255,.75)', marginBottom: 12 }}>{usuario.email}</div>
           <span className="perf-rol-chip">{rolIcon} {rolLabel}</span>
-          {verificado && <span className="perf-rol-chip" style={{ marginLeft: 8 }}>✅ Verificado</span>}
+          {estado === 'verificado' && <span className="perf-rol-chip" style={{ marginLeft: 8 }}>✅ Verificado</span>}
+          {estado === 'pendiente' && <span className="perf-rol-chip" style={{ marginLeft: 8 }}>⏳ En revisión</span>}
+          {estado === 'no_enviado' && <span className="perf-rol-chip" style={{ marginLeft: 8 }}>❌ No verificado</span>}
         </div>
       </div>
 
@@ -197,7 +217,15 @@ export default function PerfilPage() {
         )}
 
         <div className="sec">
-          <div className="sec-title">Verificación de identidad {verificado ? '✅' : '— pendiente'}</div>
+          <div className="sec-title">
+            Verificación de identidad
+            {estado === 'verificado' ? ' ✅' : estado === 'pendiente' ? ' — en revisión' : ' — pendiente'}
+          </div>
+          {estado !== 'verificado' && (
+            <p style={{ fontSize: 13, color: 'var(--txt2)', marginBottom: 12, lineHeight: 1.5 }}>
+              Necesitas estar verificado para publicar o solicitar viajes. Sube tus 3 fotos y envíalas a revisión.
+            </p>
+          )}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             <DocBox
               label="Carnet — lado frontal"
@@ -214,6 +242,19 @@ export default function PerfilPage() {
               preview={usuario.documentos?.credencial}
               onChange={(e) => onDocumento(e, 'credencial')}
             />
+            {estado !== 'verificado' && (
+              <button
+                className="btn btn-s"
+                disabled={!docsListos || enviandoVerificacion || estado === 'pendiente'}
+                onClick={enviarAVerificacion}
+              >
+                {estado === 'pendiente'
+                  ? 'Pendiente de revisión ⏳'
+                  : enviandoVerificacion
+                    ? 'Enviando…'
+                    : 'Enviar a verificación →'}
+              </button>
+            )}
           </div>
         </div>
 
